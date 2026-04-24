@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nebula Core - Studio Elite Pro+</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; }
+        #ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; z-index: 100; box-sizing: border-box; }
+        .top-bar { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+        .back-button { pointer-events: auto; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #666; padding: 8px 15px; text-decoration: none; border-radius: 3px; font-size: 11px; transition: all 0.3s; }
+        .back-button:hover { color: #fff; background: rgba(255,255,255,0.08); }
+        
+        #controls { 
+            pointer-events: auto; 
+            background: rgba(10, 10, 10, 0.93); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            width: 280px; 
+            color: white; 
+            border-radius: 4px; 
+            overflow: hidden; 
+            transition: max-height 0.4s ease-out, border 0.3s ease; 
+        }
+        #controls.collapsed { max-height: 42px; }
+        #controls.drag-over { border: 1px solid #00d4ff; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }
+        
+        .control-header { padding: 12px 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.03); }
+        .control-content { padding: 15px; max-height: 80vh; overflow-y: auto; }
+        
+        h1 { font-size: 11px; margin: 0; letter-spacing: 2px; color: #00d4ff; text-transform: uppercase; }
+        .section-title { font-size: 9px; color: #555; margin: 15px 0 8px 0; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 3px; }
+        
+        .label-group { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        label { font-size: 10px; color: #aaa; }
+        .val { font-size: 10px; color: #00d4ff; }
+        
+        input[type=range] { width: 100%; accent-color: #00d4ff; cursor: pointer; background: transparent; }
+        input[type=range]:disabled { opacity: 0.1; cursor: default; }
+        
+        select { background: #111; border: 1px solid rgba(0, 212, 255, 0.3); color: #fff; padding: 8px; width: 100%; font-size: 11px; border-radius: 2px; outline: none; appearance: none; cursor: pointer; }
+        .btn { background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); color: #00d4ff; padding: 8px; width: 100%; font-size: 10px; border-radius: 2px; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-weight: bold; }
+        .btn:hover { background: #00d4ff; color: #000; }
+        
+        .marquee-container { width: 100%; overflow: hidden; margin-bottom: 5px; position: relative; height: 20px; background: rgba(255,255,255,0.02); border-radius: 2px; display: flex; align-items: center; }
+        #status { 
+            position: absolute;
+            left: 0;
+            font-size: 10px; 
+            color: #00d4ff; 
+            white-space: nowrap;
+            padding: 0 10px;
+            display: inline-block;
+            transform: translateX(0);
+        }
+        
+        .time-info { display: flex; justify-content: space-between; font-size: 9px; color: #666; margin-top: 5px; margin-bottom: 5px; }
+        .playback-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+    <div id="ui-overlay">
+        <div class="top-bar">
+            <a href="../" class="back-button">← SPÄŤ</a>
+            <div id="controls">
+                <div class="control-header" onclick="document.getElementById('controls').classList.toggle('collapsed')">
+                    <h1>Nebula Core Elite</h1>
+                    <span class="toggle-icon">−</span>
+                </div>
+                <div class="control-content">
+                    <div class="section-title">Audio Prehrávač</div>
+                    <input type="file" id="audio-input" accept="audio/*" style="display: none;">
+                    <button class="btn" onclick="document.getElementById('audio-input').click()">OTVORIŤ ALEBO DROP SÚBOR</button>
+                    
+                    <div class="audio-player" style="margin-top:10px">
+                        <div class="marquee-container">
+                            <span id="status">ŽIADNY SÚBOR</span>
+                        </div>
+                        <input type="range" id="seek-slider" value="0" step="0.01" disabled style="margin: 8px 0;">
+                        <div class="time-info">
+                            <span id="time-current">00:00</span>
+                            <span id="time-remaining">-00:00</span>
+                        </div>
+                        <div class="playback-btns">
+                            <button class="btn" id="btn-play-pause">PLAY</button>
+                            <button class="btn" id="btn-stop">STOP</button>
+                        </div>
+                    </div>
+
+                    <div class="section-title">Nastavenia Zvuku</div>
+                    <div class="row" style="margin-bottom:12px">
+                        <div class="label-group"><label>Rýchlosť (Pitch)</label><span class="val" id="val-pitch">1.0x</span></div>
+                        <input type="range" id="pitch-slider" min="0.5" max="2.0" step="0.1" value="1.0">
+                    </div>
+                    <div class="row">
+                        <div class="label-group"><label>Hlasitosť</label><span class="val" id="val-vol">100%</span></div>
+                        <input type="range" id="vol-slider" min="0" max="1" step="0.01" value="1">
+                    </div>
+
+                    <div class="section-title">Vizuálny Mód</div>
+                    <select id="mode-select" style="margin-bottom:10px">
+                        <option value="amplitude">Amplitúda (Spektrum)</option>
+                        <option value="bpm">BPM (Beat Detection)</option>
+                        <option value="time">Čas (Chroma Shift)</option>
+                    </select>
+
+                    <div id="settings-amplitude" class="mode-settings">
+                        <div class="label-group"><label>Citlivosť farby</label><span class="val" id="val-amp-sens">180</span></div>
+                        <input type="range" id="amp-sens-slider" min="50" max="255" value="180">
+                    </div>
+
+                    <div id="settings-bpm" class="mode-settings" style="display:none;">
+                        <div class="label-group"><label>Prah úderu (Bass Flux)</label><span class="val" id="val-bpm-threshold">40</span></div>
+                        <input type="range" id="bpm-threshold-slider" min="5" max="150" value="40">
+                    </div>
+
+                    <div id="settings-time" class="mode-settings" style="display:none;">
+                        <div class="label-group"><label>Rýchlosť cyklu</label><span class="val" id="val-time-speed">1.5</span></div>
+                        <input type="range" id="time-speed-slider" min="0.1" max="5.0" step="0.1" value="1.5">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, particles, analyser, dataArray;
+        let audioContext, audioBuffer, sourceNode, gainNode;
+        let isPaused = true, startTime = 0, pausedAt = 0, userIsSeeking = false;
+        let particleCount = 15000, basePositions = [], isInitialized = false;
+        let colorTimer = 0.55, currentHue = 0.55, lastBeat = 0;
+        
+        let marqueeOffset = 0;
+        let marqueeWaitFrames = 0;
+        const MARQUEE_SPEED = 0.6;
+        const INITIAL_WAIT = 600;
+        let prevBassEnergy = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 100;
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            const geometry = new THREE.BufferGeometry();
+            const posAttr = new Float32Array(particleCount * 3);
+            const colAttr = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount; i++) {
+                const r = 35;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos((Math.random() * 2) - 1);
+                posAttr[i*3] = r * Math.sin(phi) * Math.cos(theta);
+                posAttr[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+                posAttr[i*3+2] = r * Math.cos(phi);
+                basePositions.push(new THREE.Vector3(posAttr[i*3], posAttr[i*3+1], posAttr[i*3+2]));
+                const c = new THREE.Color().setHSL(currentHue, 0.7, 0.5);
+                colAttr[i*3] = c.r; colAttr[i*3+1] = c.g; colAttr[i*3+2] = c.b;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(posAttr, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colAttr, 3));
+            particles = new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.6, vertexColors: true, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending }));
+            scene.add(particles);
+            
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            setupDragAndDrop();
+            animate();
+        }
+
+        function setupDragAndDrop() {
+            const controls = document.getElementById('controls');
+            window.addEventListener('dragover', (e) => { e.preventDefault(); controls.classList.add('drag-over'); });
+            window.addEventListener('dragleave', (e) => { e.preventDefault(); controls.classList.remove('drag-over'); });
+            window.addEventListener('drop', (e) => {
+                e.preventDefault();
+                controls.classList.remove('drag-over');
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('audio/')) setupAudio(file);
+            });
+        }
+
+        async function setupAudio(file) {
+            stopAudio();
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            gainNode = audioContext.createGain();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 512;
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+            const arrayBuffer = await file.arrayBuffer();
+            audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            
+            document.getElementById('status').innerText = file.name.toUpperCase();
+            resetMarquee();
+
+            document.getElementById('seek-slider').disabled = false;
+            document.getElementById('seek-slider').max = audioBuffer.duration;
+            pausedAt = 0;
+            playAudio(0);
+        }
+
+        function resetMarquee() {
+            marqueeOffset = 0;
+            marqueeWaitFrames = INITIAL_WAIT;
+            document.getElementById('status').style.transform = `translateX(0px)`;
+        }
+
+        function updateMarquee() {
+            const el = document.getElementById('status');
+            const container = el.parentElement;
+            if (!container) return;
+            const textWidth = el.offsetWidth;
+            const containerWidth = container.offsetWidth;
+            if (textWidth > containerWidth) {
+                if (marqueeWaitFrames > 0) marqueeWaitFrames--;
+                else {
+                    marqueeOffset -= MARQUEE_SPEED;
+                    if (marqueeOffset < -textWidth) marqueeOffset = containerWidth;
+                    if (Math.abs(marqueeOffset) < MARQUEE_SPEED) { marqueeOffset = 0; marqueeWaitFrames = INITIAL_WAIT; }
+                    el.style.transform = `translateX(${marqueeOffset}px)`;
+                }
+            } else { el.style.transform = `translateX(0px)`; }
+        }
+
+        function formatTime(seconds) {
+            seconds = Math.max(0, seconds);
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        }
+
+        function playAudio(offset) {
+            if (sourceNode) try { sourceNode.stop(); } catch(e) {}
+            sourceNode = audioContext.createBufferSource();
+            sourceNode.buffer = audioBuffer;
+            sourceNode.playbackRate.value = parseFloat(document.getElementById('pitch-slider').value);
+            sourceNode.connect(gainNode);
+            gainNode.connect(analyser);
+            analyser.connect(audioContext.destination);
+            sourceNode.start(0, offset);
+            startTime = audioContext.currentTime - (offset / sourceNode.playbackRate.value);
+            isPaused = false;
+            isInitialized = true;
+            document.getElementById('btn-play-pause').innerText = "PAUSE";
+        }
+
+		function stopAudio() {
+			if (sourceNode) try { sourceNode.stop(); } catch(e) {}
+			pausedAt = 0; 
+			isPaused = true;
+			
+			// UI resety
+			document.getElementById('btn-play-pause').innerText = "PLAY";
+			document.getElementById('seek-slider').value = 0;
+			updateTimeDisplay(0);
+
+			// Vizuálny reset - vrátenie častíc na základné pozície
+			if (particles && basePositions.length > 0) {
+				const pos = particles.geometry.attributes.position.array;
+				for (let i = 0; i < particleCount; i++) {
+					const i3 = i * 3;
+					pos[i3] = basePositions[i].x;
+					pos[i3+1] = basePositions[i].y;
+					pos[i3+2] = basePositions[i].z;
+				}
+				particles.geometry.attributes.position.needsUpdate = true;
+			}
+		}
+
+        const seekSlider = document.getElementById('seek-slider');
+        seekSlider.onmousedown = () => userIsSeeking = true;
+        seekSlider.onmouseup = () => {
+            userIsSeeking = false;
+            if (audioBuffer) {
+                pausedAt = parseFloat(seekSlider.value);
+                if (!isPaused) playAudio(pausedAt);
+                updateTimeDisplay(pausedAt);
+            }
+        };
+
+        function updateTimeDisplay(current) {
+            document.getElementById('time-current').innerText = formatTime(current);
+            if(audioBuffer) {
+                const remaining = audioBuffer.duration - current;
+                document.getElementById('time-remaining').innerText = "-" + formatTime(remaining);
+            }
+        }
+
+        document.getElementById('btn-play-pause').onclick = () => {
+            if (!audioBuffer) return;
+            if (isPaused) playAudio(pausedAt);
+            else {
+                pausedAt = (audioContext.currentTime - startTime) * sourceNode.playbackRate.value;
+                sourceNode.stop();
+                isPaused = true;
+                document.getElementById('btn-play-pause').innerText = "PLAY";
+            }
+        };
+
+        document.getElementById('btn-stop').onclick = stopAudio;
+
+        document.getElementById('mode-select').onchange = (e) => {
+            document.querySelectorAll('.mode-settings').forEach(s => s.style.display = 'none');
+            document.getElementById('settings-' + e.target.value).style.display = 'block';
+        };
+
+        document.getElementById('pitch-slider').oninput = (e) => {
+            document.getElementById('val-pitch').innerText = e.target.value + "x";
+            if(sourceNode && !isPaused) {
+                const cur = (audioContext.currentTime - startTime) * sourceNode.playbackRate.value;
+                sourceNode.playbackRate.value = e.target.value;
+                startTime = audioContext.currentTime - (cur / e.target.value);
+            }
+        };
+        document.getElementById('vol-slider').oninput = (e) => {
+            document.getElementById('val-vol').innerText = Math.round(e.target.value * 100) + "%";
+            if(gainNode) gainNode.gain.value = e.target.value;
+        };
+        document.getElementById('amp-sens-slider').oninput = (e) => document.getElementById('val-amp-sens').innerText = e.target.value;
+        document.getElementById('bpm-threshold-slider').oninput = (e) => document.getElementById('val-bpm-threshold').innerText = e.target.value;
+        document.getElementById('time-speed-slider').oninput = (e) => document.getElementById('val-time-speed').innerText = e.target.value;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const visualTime = Date.now() * 0.001;
+            if (particles) particles.rotation.y += 0.001;
+            
+            updateMarquee();
+
+            if (isInitialized && !isPaused) {
+                const currentPos = (audioContext.currentTime - startTime) * sourceNode.playbackRate.value;
+                
+                // Automatické zastavenie po skončení pesničky
+                if (audioBuffer && currentPos >= audioBuffer.duration) {
+                    stopAudio();
+                    return;
+                }
+
+                analyser.getByteFrequencyData(dataArray);
+                const mode = document.getElementById('mode-select').value;
+                let sum = 0; for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                const avgAmp = sum / dataArray.length;
+
+                if (mode === 'amplitude') {
+                    currentHue = (0.8 - (Math.min(avgAmp / document.getElementById('amp-sens-slider').value, 1.0) * 0.8)) % 1.0;
+                } else if (mode === 'bpm') {
+                    let currentBassEnergy = (dataArray[0] + dataArray[1] + dataArray[2]) / 3;
+                    let flux = Math.max(0, currentBassEnergy - prevBassEnergy);
+                    prevBassEnergy = currentBassEnergy;
+                    if (flux > document.getElementById('bpm-threshold-slider').value && Date.now() - lastBeat > 250) {
+                        currentHue = Math.random(); 
+                        lastBeat = Date.now();
+                    }
+                } else if (mode === 'time') {
+                    if (avgAmp > 5) colorTimer += (0.001 * document.getElementById('time-speed-slider').value);
+                    currentHue = colorTimer % 1.0;
+                }
+
+                const colorObj = new THREE.Color().setHSL(currentHue, 0.8, 0.5);
+                const pos = particles.geometry.attributes.position.array;
+                const col = particles.geometry.attributes.color.array;
+
+                for (let i = 0; i < particleCount; i++) {
+                    const i3 = i * 3;
+                    const freq = dataArray[i % dataArray.length] / 255;
+                    const scale = 1 + (freq * 1.5 + Math.sin(visualTime + i * 0.1) * 0.2);
+                    pos[i3] = basePositions[i].x * scale;
+                    pos[i3+1] = basePositions[i].y * scale;
+                    pos[i3+2] = basePositions[i].z * scale;
+                    col[i3] = colorObj.r; col[i3+1] = colorObj.g; col[i3+2] = colorObj.b;
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+                particles.geometry.attributes.color.needsUpdate = true;
+                
+                if (!userIsSeeking) {
+                    seekSlider.value = currentPos;
+                    updateTimeDisplay(currentPos);
+                }
+            } else if (!isInitialized) {
+                const pos = particles.geometry.attributes.position.array;
+                for (let i = 0; i < particleCount; i++) {
+                    const i3 = i * 3;
+                    const idle = 1 + Math.sin(visualTime + i * 0.1) * 0.05;
+                    pos[i3] = basePositions[i].x * idle;
+                    pos[i3+1] = basePositions[i].y * idle;
+                    pos[i3+2] = basePositions[i].z * idle;
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+            }
+            renderer.render(scene, camera);
+        }
+        document.getElementById('audio-input').onchange = (e) => e.target.files[0] && setupAudio(e.target.files[0]);
+        init();
+    </script>
+</body>
+</html>
