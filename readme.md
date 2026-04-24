@@ -5,7 +5,7 @@
 - **3D Časticový systém:** Vizualizácia tvorená 15 000 časticami s plynulými animáciami a aditívnym blendingom.
 - **Tri vizualizačné módy:**
     - **Amplitúda (Spektrum):** Reaguje na intenzitu zvuku naprieč frekvenčným spektrom.
-    - **BPM (Beat Detection):** Využíva algoritmus *Bass Flux* na detekciu úderov a dynamickú zmenu farieb.
+    - **Bass Reactive (Pulse):** Využíva algoritmus *Bass Flux* na detekciu úderov a dynamickú zmenu farieb.
     - **Čas (Chroma Shift):** Plynulý farebný cyklus, ktorého rýchlosť je ovplyvnená energiou skladby.
 - **Audio Engine:**
     - Podpora pre **Drag & Drop** nahrávanie súborov priamo do prehliadača.
