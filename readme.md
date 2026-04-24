@@ -25,4 +25,4 @@ Projekt nevyžaduje žiadnu zložitú inštaláciu ani serverový backend.
 
 1. Naklonujte repozitár:
    ```bash
-   git clone [https://github.com/xrepcak/MSAP.git](https://github.com/xrepcak/MSAP.git)
+   git clone https://github.com/xrepcak/MSAP.git
