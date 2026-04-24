@@ -102,7 +102,7 @@
                     <div class="section-title">Vizuálny Mód</div>
                     <select id="mode-select" style="margin-bottom:10px">
                         <option value="amplitude">Amplitúda (Spektrum)</option>
-                        <option value="bpm">BPM (Beat Detection)</option>
+                        <option value="bpm">Bass Reactive (Pulse)</option>
                         <option value="time">Čas (Chroma Shift)</option>
                     </select>
 
@@ -111,10 +111,13 @@
                         <input type="range" id="amp-sens-slider" min="50" max="255" value="180">
                     </div>
 
-                    <div id="settings-bpm" class="mode-settings" style="display:none;">
-                        <div class="label-group"><label>Prah úderu (Bass Flux)</label><span class="val" id="val-bpm-threshold">40</span></div>
-                        <input type="range" id="bpm-threshold-slider" min="5" max="150" value="40">
-                    </div>
+					<div id="settings-bpm" class="mode-settings" style="display:none;">
+						<div class="label-group">
+							<label>Prah citlivosti (Bass Flux)</label>
+							<span class="val" id="val-bpm-threshold">40</span>
+						</div>
+						<input type="range" id="bpm-threshold-slider" min="5" max="150" value="40">
+					</div>
 
                     <div id="settings-time" class="mode-settings" style="display:none;">
                         <div class="label-group"><label>Rýchlosť cyklu</label><span class="val" id="val-time-speed">1.5</span></div>
