@@ -25,4 +25,4 @@ Projekt nevyžaduje žiadnu zložitú inštaláciu ani serverový backend.
 
 1. Naklonujte repozitár:
    ```bash
-   git clone [https://github.com/vas-profil/nebula-core.git](https://github.com/vas-profil/nebula-core.git)
+   git clone [https://github.com/xrepcak/MSAP.git](https://github.com/xrepcak/MSAP.git)
