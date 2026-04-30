@@ -1,4 +1,4 @@
-**Nebula Core** je interaktívny webový audio vizualizér postavený na knižnici **Three.js**. Projekt transformuje zvukové vlny na dynamické pohyby častíc v 3D priestore, pričom ponúka pokročilé funkcie pre analýzu hudby v reálnom čase, vrátane detekcie úderov (BPM) a spracovania basov.
+**Audio Vizualizer** je interaktívny webový audio vizualizér postavený na knižnici **Three.js**. Projekt transformuje zvukové vlny na dynamické pohyby častíc v 3D priestore, pričom ponúka pokročilé funkcie pre analýzu hudby v reálnom čase, vrátane detekcie úderov (BPM) a spracovania basov.
 
 ## 🚀 Hlavné funkcie
 
@@ -25,4 +25,4 @@ Projekt nevyžaduje žiadnu zložitú inštaláciu ani serverový backend.
 
 1. Naklonujte repozitár:
    ```bash
-   git clone https://github.com/xrepcak/MSAP.git
+   git clone https://github.com/xrepcak/Audio-Vizualizer.git
